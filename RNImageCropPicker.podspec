@@ -13,10 +13,7 @@ Pod::Spec.new do |s|
   s.platform     = :ios, "8.0"
   s.dependency 'React-Core'
   s.dependency 'React-RCTImage'
-  s.dependency 'TOCropViewController', '~> 2.7.4'
-  s.resource_bundles = {
-    'RNImageCropPickerPrivacyInfo' => ['ios/PrivacyInfo.xcprivacy'],
-  }
+  s.dependency 'TOCropViewController'
 
   s.subspec 'QBImagePickerController' do |qb|
     qb.name             = "QBImagePickerController"
