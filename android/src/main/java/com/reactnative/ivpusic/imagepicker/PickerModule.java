@@ -607,34 +607,46 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
         return path;
     }
 
-    private File createExternalStoragePrivateFile(Context context, Uri uri) throws FileNotFoundException {
-        InputStream inputStream = context.getContentResolver().openInputStream(uri);
-
-        String extension = this.getExtension(context, uri);
-        File file = new File(context.getExternalCacheDir(), "/temp/" + System.currentTimeMillis() + "." + extension);
-        File parentFile = file.getParentFile();
-        if (parentFile != null) {
-            parentFile.mkdirs();
-        }
-
+    private File createExternalStoragePrivateFile(Context context, Uri uri) throws IOException {
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+        File file = null;
         try {
-            // Very simple code to copy a picture from the application's
-            // resource into the external file.  Note that this code does
-            // no error checking, and assumes the picture is small (does not
-            // try to copy it in chunks).  Note that if external storage is
-            // not currently mounted this will silently fail.
-            OutputStream outputStream = new FileOutputStream(file);
-            byte[] data = new byte[inputStream.available()];
-            inputStream.read(data);
-            outputStream.write(data);
-            inputStream.close();
-            outputStream.close();
+            inputStream = context.getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                throw new FileNotFoundException("InputStream is null for URI: " + uri);
+            }
+            String extension = this.getExtension(context, uri);
+            file = new File(context.getExternalCacheDir(), "/temp/" + System.currentTimeMillis() + "." + extension);
+            File parentFile = file.getParentFile();
+            if (parentFile != null) {
+                parentFile.mkdirs();
+            }
+            outputStream = new FileOutputStream(file);
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
         } catch (IOException e) {
-            // Unable to create file, likely because external storage is
-            // not currently mounted.
             Log.w("image-crop-picker", "Error writing " + file, e);
+            throw e;
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    Log.e("image-crop-picker", "Error closing InputStream", e);
+                }
+            }
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    Log.e("image-crop-picker", "Error closing OutputStream", e);
+                }
+            }
         }
-
         return file;
     }
 
